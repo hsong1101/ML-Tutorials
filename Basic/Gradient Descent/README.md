@@ -1,14 +1,18 @@
 
-# Intro
+# What is Gradient Descent?
 
-In this post, I will talk about basics of gradient descent and its techniques.
+Gradient descent is one of basic but very important machine learning techniques to find the best optimum values, among possible ones, of weights such that it minimizes total loss values.
 
-So what is gradient descent?<br>
-In simple words, it can be thought as steps to take to get the least possible error value computed from loss functions. This is like when we are on a mountain and try to get back to the ground, we check which directions are there to choose as we walk down. There could be only one path from the peak to the ground or several. One path could lead us to the bottom quickly while others may slow us down. We could think of this as gradient 'descent' since we are trying to get to the lowest point from where we are.
+When we define a model such as SVM, Linear Regression or Decision Tree Classifier, we have to have some sort of a way to know if our model is being trained well or not. And to know that, we use loss function which computes the difference between true values, usually noted as $y$ value, and predicted values, $\hat y$.
 
-# Concepts
+One simple loss function can be MSE whose equation is
+$$L = \frac{1}{N}\sum_{i=1}^N(y_i - \hat y_i)^2 = \frac{1}{N}\sum_{i=1}^N(y_i - (x_iw + b))^2$$ 
 
-## Load Libraries
+When we first initialize a model, usually its weights are generated randomly and every time we train, we update them in a way that in the next training step, it lowers the loss value.
+
+This process until it no more lowers the loss is called gradient descent.
+
+# Codes & Explanation
 
 
 ```python
@@ -18,253 +22,211 @@ import matplotlib.pyplot as plt
 ```
 
 Let's randomly generate x values and set y values in range (1, 10)<br>
-As you may follow this, the graph will look different since it is random number.
+As you may follow this, generated data will look different since it is random.
 
 
 ```python
-x = np.random.randint(10, size=10)
-y = np.arange(1, 11)
+x = np.linspace(0, 10, 100)
+y = np.random.random(100) + x + 3
 ```
+
+![random points](plots/random_points.png)
+
+If we try to find a line that has the lowest loss values (or fits the data), it would be something like this.
+
+![random points fit](plots/random_points_fit.png)
+
+The red line was not the best line as it was manually done.
+
+So to find the best line, let's start from 0 for both weights and bias (But in practice, weights are also initialized randomly).
 
 
 ```python
-plt.figure(figsize=(6,6))
-plt.scatter(x, y)
+w = b = 0
 ```
 
+This weight and bias will look like this.
 
+![random points fit line](plots/random_points_start.png)
 
+And let's use the same loss function mentioned above.
 
-    <matplotlib.collections.PathCollection at 0x2677cfc8198>
+To compute the gradient descent, we need partial derivatives with respect to weights and bias (if there is). The followings are corresponding equations.
 
+$$MSE = \frac{1}{N}\sum_{i=1}^N(y_i - (x_iw + b))^2$$ 
+$$\frac{\partial MSE}{\partial w} = \frac{-2}{N}\sum_{i=1}^N(y_i - (x_iw + b))x_i$$
+$$\frac{\partial MSE}{\partial b} = \frac{-2}{N}\sum_{i=1}^N(y_i - (x_iw + b))$$
 
+## Convex problem (brief overview)
 
+Before proceeding further, let me go how we get to obtain an optimal weights (and bias).
 
-![png](output_8_1.png)
+In a perfect world where there always exists only one optimum, our loss values might look like this.
 
+![convex loss](plots/convex_loss.png) 
 
-In common practice, we set the bias and the slope for a line to start with 0 values that if we also put it on the graph, it looks like the following graph.
+We can see that at first, the loss is big and as it progresses, it moves toward 0 but after that it increases back. Cases such as above where there only exists one curve is called convex problem and in such cases, we are guaranteed to reach the optimal value.
+
+It does not matter if the loss can actually get to 0 or not because even then, it achieves best possible minimum. 
+
+So how do we get there? If you have taken calculus, you know that at each point of a line there exists a tangent line (or multiple in some cases). With those tangent lines and its derivatives, we gain information on which direction we should go to reach the lowest point.
+
+Whether the problem is convex or not, we can always reach an optimum (it could be global or local, depending on convexity of problems). Those optimal points have the derivative of 0 (horizontal line at a point).
+
+With the above graph, we see that at point of 0 we have the horizontal line and that's where we would like to be.
+
+So when problems are not convex, meaning there exists many points with derivative of 0's, we are not guaranteed to reach the global optimum but most likely a local one. These cases will be covered in another post.
+
+## Gradient Descent Implementation
+
+The code for the partial derivatives and MSE are defined next.
 
 
 ```python
-plt.figure(figsize=(6,6))
-plt.scatter(x, y)
-m, b = np.zeros(1), np.zeros(1)
-plt.plot(x, x*m+b, color='r')
-plt.show()
-```
-
-
-![png](output_10_0.png)
-
-
-For now, our predicted value for each $y_i$ is all 0. We will use MSE function from sklearn. With this, next step is to find the error value.
-
-
-```python
-from sklearn.metrics import mean_squared_error
-```
-
-
-```python
-print('MSE : {}'.format(np.round(mean_squared_error(y, x*m + b)), 3))
-```
-
-    MSE : 38.0
+# Loss function
+def mse(y, x, w, b):
     
+    return np.mean((y - (x * w + b))**2)
 
-Let's try assigning different values for m(slope) and look at a graph of error values.
-
-
-```python
-def diff_weight():
-    mse = []
-    for m in range(-5, 5):
-        mse.append(np.round(mean_squared_error(y, x*m), 3))
+# Partial Derivative with respect to w
+def partial_w(y, x, w, b):
     
-    plt.figure(figsize=(6,6))
-    plt.scatter(np.arange(1,11), mse)
-    plt.plot(np.arange(1,11), mse)
-    return np.array(mse)
+    return -2 * np.mean((y - (x * w + b)) * x)
+
+# Partial Derivative with respect to b
+def partial_b(y, x, w, b):
     
+    return -2 * np.mean(y - (x * w + b))
 ```
 
-
-```python
-mse = diff_weight()
-```
-
-
-![png](output_16_0.png)
-
-
-As we can see here the error starts from a high value and moves to the right, decreasing in its MSE. However, once it reaches a certain point, it began to increase. We call this minimum point as global minimum. Our goal is to find this global minimum point so that our MSE value is as low as possible. As mentioned in the beginning of the post, findind this point from the starting point is gradient descent since we are climbing down the error curve. 
-
-We can see it from just looking at the graph but without it, it is hard to tell which direction we should move when we climb down since the starting point can be either on the left or the right side of the minimum. To get the idea of which direction, we use derivative of the error function.$$mse = \frac{1}{N}\sum_{i=1}^N(y_i - (mx_i + b))^2$$
-$$m = \frac{-2}{N}\sum_{i=1}^N(y_i - (mx_i + b))x$$
-$$b = \frac{-2}{N}\sum_{i=1}^N(y_i - (mx_i + b))$$
-
-The first is the formula for the error function and the next two are its derivative value respect to m and b.<br>
-With these formula, we can get the slope of the function that we can decide in which direction to go. The code is as follows.
-
-By setting some arbitrary value for learning rate, we can now update our next point to move on as the next statement. $$x = x - slope * a$$
-Since we are moving little by little to avoid getting away from the global minimum, we should iterate until we reach the point. The code is as follows.
+Since we are using MSE which is a convex function, we know we can get to the global optimum following code.
 
 
 ```python
-def grad_m(m, x, y, b):
-    return -2 * np.mean(x * (y - (x * m + b)))
+w = b = 0
 
-def grad_b(m, x, y, b):
-    return -2 * np.mean(y - (x * m + b))
-```
+learning_rate = 1e-2
 
-We can now implement our gradient descent function to get appropriate m and b.
+loss = []
 
+for i in range(1000):
 
-```python
-def gradient_descent(x, y):
-    m, b = 0, 0
+    dw = partial_w(y, x, w, b)
+    db = partial_b(y, x, w, b)
+
+    w = w - dw * learning_rate
+    b = b - db * learning_rate
     
-    while True:
+    if i % 20 == 0:
         
-        m -= grad_m(m, x, y, b)
-        b -= grad_b(m, x, y, b)
+        l = mse(y, x, w, b)
         
-        if m == 0 or b == 0:
-            return m, b
+        print('Loss :', l)
+        
+        loss.append(l)
 ```
 
-But this implementation has its problems. <br>
-First, we are updating the values by substracting the previous value by the new value.<br>
-Second, we are iterating until either m or b reaches 0 which means we are looping until one of them reaches a point where its slope value is 0.
+    Loss : 10.555032679051148
+    Loss : 2.310796035090503
+    Loss : 1.9087972406483862
+    Loss : 1.5793568720457842
+    Loss : 1.3093785587634366
+    Loss : 1.0881297483885783
+    Loss : 0.9068150513036444
+    Loss : 0.7582265941575854
+    Loss : 0.6364574824859369
+    Loss : 0.5366669816482634
+    Loss : 0.4548880812298567
+    Loss : 0.3878697929408484
+    Loss : 0.3329479128200721
+    Loss : 0.28793911010352097
+    Loss : 0.2510541324311872
+    Loss : 0.22082667700526815
+    Loss : 0.19605510008734917
+    Loss : 0.17575464758964404
+    Loss : 0.1591183077644841
+    Loss : 0.14548472975387144
+    Loss : 0.13431193265277144
+    Loss : 0.1251557599323617
+    Loss : 0.11765222271358215
+    Loss : 0.11150302997630385
+    Loss : 0.10646373048091924
+    Loss : 0.10233399500357193
+    Loss : 0.09894965257096182
+    Loss : 0.09617616410808294
+    Loss : 0.09390327405428577
+    Loss : 0.09204062733128923
+    Loss : 0.0905141774227714
+    Loss : 0.08926324277453858
+    Loss : 0.08823809449720738
+    Loss : 0.08739797947441223
+    Loss : 0.086709500288393
+    Loss : 0.08614528755951621
+    Loss : 0.08568291192072999
+    Loss : 0.08530399237425228
+    Loss : 0.08499346558464933
+    Loss : 0.08473898706023052
+    Loss : 0.08453044041769076
+    Loss : 0.084359535221608
+    Loss : 0.0842194774115547
+    Loss : 0.08410469921518313
+    Loss : 0.08401063781041529
+    Loss : 0.08393355393781071
+    Loss : 0.08387038325233774
+    Loss : 0.08381861450527982
+    Loss : 0.0837761897135923
+    Loss : 0.0837414223481059
 
-Let's look at a graph of simple quadratic function($y=x^2$) below. Let's assume that we are at (-2, 4) (red dot) and its slope is -4. The above code updates our new m (or b) in a way that it just moves the current point by the value of the slope. <br>
-Our current m is -2 and the slope is -4. If we do m = -2 - (-4), we would get new m value of 2 which is just the opposite side of the graph, only changed in its direction while having slope. Because of this reason, at each iteration, we should carefully choose how much step we would like to move to the desired direction. For this, we need a variable named 'learning_rate' or $\alpha$.<br>
-In an analogy from above again that from the top of a mountain, we don't want to rush down to a path when we are not sure if that direction is a correct way to go even if it 'looks' it goes down.
 
-This learning rate can be any value but usually much less than 1(which is the case above).
-
-But by using learning rate, this raises a problem if while loop is used. We don't know how many iterations it would take to reach the minimum point. As our data becomes large and more variables are introduced, we cannot guarantee how many iteration it would take that we don't know when we could get it. This is why we preset the number of iteration when doing gradient descent. Its value can any number of positive integer. 
-
-With this change, we can update our function.
+![random points gd](plots/random_points_gd.png) 
 
 
 ```python
-def gradient_descent(x, y, learning_rate=0.01, num_iter=500):
-    m, b = 0, 0
-    
-    for _ in range(num_iter):
-        
-        dm = grad_m(m, x, y, b)
-        db = grad_b(m, x, y, b)
-        
-        m -= dm * learning_rate
-        b -= db * learning_rate
-        
-    return m,b
-```
-
-Simple as above!<br>
-dm and db means the change in m and b (d means delta $\Delta$ or 'change in'). 
-
-I'm going to add some other statements to get mse values at certain number of iterations.
-
-
-```python
-def gradient_descent(x, y, learning_rate=0.01, iter_num=500):
-    
-    m = 0
-    b = 0
-    
-    mse = np.array([])
-    
-    for i in range(iter_num):
-        
-        db = grad_b(m, x, y, b)
-        dm = grad_m(m, x, y, b)
-        
-        b -= db * learning_rate
-        m -= dm * learning_rate
-
-        if i % 20 == 0:
-            error = mean_squared_error(y, x*m + b)
-            mse = np.append(mse, [error])
-    
-    return np.round(m,3), np.round(b,3), mse
-```
-
-Using the same x, y defined and new gradient function, we can now get new m and b values and see in in a graph.
-
-
-```python
-m, b, mse = gradient_descent(x, y)
+w, b
 ```
 
 
-```python
-plt.figure(figsize=(6,6))
-plt.xlim(-1, 11)
-plt.ylim(-1, 11)
-plt.scatter(x, y)
-plt.plot(x, (m*x+b), c='r')
-plt.show()
-```
 
 
-![png](output_35_0.png)
+    (1.0028761687323586, 3.49054178136775)
 
 
-The line seems about right!<br>
-By the mse values returned by the function, we can also check out how error values change over each iteration.
 
+We can see that the best w is around 1.011 and b is 3.413.
 
-```python
-plt.figure(figsize=(6,6))
-plt.scatter(np.arange(0,len(mse)), mse)
-plt.ylabel('MSE')
-plt.xlabel('Iter # (1 = 25)')
-plt.xlim(0,len(mse)+1)
-plt.ylim(0, 40)
-plt.xticks(np.arange(-1, len(mse)+1))
-plt.title('MSE value over time')
-plt.show()
-```
+## Experiments with Learning Rates
 
+One very important thing in gradient descent is to choose an appropriate learning rate. Learning rate is how much we move towards the optimum value. Setting it too high will cause not being able to reach the optimal because it bounces off too much, while setting it too low will make it slow.
 
-![png](output_37_0.png)
+Let's look at an example of setting a high learning rate.
 
+![gradient descent example](plots/gd_example1.png)
 
-As you can see, MSE decreases over each iteration and stop going down once it hits the minimum point. <br>
-What we'll do next is how much can different values of learning rate can affect MSE.
+The above is the graph of $f(x) = x^2$ and our current w is -4. To get to the optimum, we have to move to the right by 4. With the derivative of the function and the learning rate of 2, we will have the new weight of 
+$$w = w - lr * dw = -4 - 2 * (-8) = 12$$
 
+![gradient example 2](plots/gd_example2.png)
 
-```python
-plt.figure(figsize=(20,8))
+We can see that the red dot is now much further away from the starting point!
 
-learning_rate = [0.1, 0.01, 0.001, 0.0001, 0.00001]
+Now we if use too low learning rate such as 0.00001, from w of -4 will be $$w = w - lr*dw = -4 - 0.00001*(-8) = -3.99992$$
 
-for i in range(len(learning_rate)):
-    plt.subplot(1, len(learning_rate), i+1)
-    plt.title('learning rate of {}'.format(learning_rate[i]))
-    plt.suptitle('Different Value of Learning Rate')
-    
-    m, b, mse = gradient_descent(x, y, learning_rate=learning_rate[i])
-    plt.scatter(np.arange(0,len(mse)), mse)
-    plt.ylabel('MSE')
-    plt.xlabel('Iter # (1 = 25)')
-    plt.xlim(-1,20)
-    plt.ylim(0, 40)
+![gradient example 3](plots/gd_example3.png)
 
-```
+It didn't progress much that it seems as though it did nothing at all.
 
-    c:\users\hsong1101\anaconda3\envs\tensorflow\lib\site-packages\sklearn\metrics\regression.py:239: RuntimeWarning: overflow encountered in square
-      output_errors = np.average((y_true - y_pred) ** 2, axis=0,
-    
+For such, when we try to find the best weights we have to try many different learning rates and use the best one.
 
+The following 6 graphs are plots of losses on diffrent learning rates on the same data we used above.
 
-![png](output_39_1.png)
+![different learning rates](plots/diff_lr.png)
 
+The first two learning rates are set too high that the final loss is too high. The next two losses seem fine but we can see that using the learning rate of 0.001 works better (converges faster) than 0.01. The last two seem to be working as well but it converges too slow that we don't want to use or train for a longer period.
 
-As you can see, when the learning rate is 0.1, there are no dots in the graph because it is too high that at each iteration, it just gets further from the minimum point. But from 0.01, we can actually see the values get decreasing. <br>
-As the learning rate gets smaller, the curve becomes more straight that reaching the minimum point becomes slower too and hence, takes more iterations and time. This is why it is important to set an appropriate value for learning rate and number of iterations. This is one of feature-engineering. In this example, we tried putting different values for the rate to find a proper one and this technique is called Grid Search (which to be discussed later).
+# Conclusion
+
+We've covered what gradient descent is and how setting a different value for learning rates affects the speed of convergence of it. Gradient descent is very important concept in all of machine learning, from supervised and unsupervised to deep learning, and without understanding how it works, a model made might not be able to work well.
+
+Thank you again for reading the post and if you have seen any typos or mistakes or have any other suggestions, please let me know.
+
+You can find the full code at [this link]()
