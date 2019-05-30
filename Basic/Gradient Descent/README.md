@@ -3,10 +3,10 @@
 
 Gradient descent is one of basic but very important machine learning techniques to find the best optimum values, among possible ones, of weights such that it minimizes total loss values.
 
-When we define a model such as SVM, Linear Regression or Decision Tree Classifier, we have to have some sort of a way to know if our model is being trained well or not. And to know that, we use loss function which computes the difference between true values, usually noted as $y$ value, and predicted values, $\hat y$.
+When we define a model such as SVM, Linear Regression or Decision Tree Classifier, we have to have some sort of a way to know if our model is being trained well or not. And to know that, we use loss function which computes the difference between true values, usually noted as <img src="https://rawgit.com/hsong1101/ML-Tutorials/master/svgs/deceeaf6940a8c7a5a02373728002b0f.svg?invert_in_darkmode" align=middle width=8.649300000000004pt height=14.155350000000013pt/> value, and predicted values, <img src="https://rawgit.com/hsong1101/ML-Tutorials/master/svgs/6b950307e24405f963ef75ad1217dcb1.svg?invert_in_darkmode" align=middle width=9.347580000000002pt height=22.831379999999992pt/>.
 
 One simple loss function can be MSE whose equation is
-$$L = \frac{1}{N}\sum_{i=1}^N(y_i - \hat y_i)^2 = \frac{1}{N}\sum_{i=1}^N(y_i - (x_iw + b))^2$$ 
+<p align="center"><img src="https://rawgit.com/hsong1101/ML-Tutorials/master/svgs/6c9690f05e5b428a0d82d32f3306bc6d.svg?invert_in_darkmode" align=middle width=333.16799999999995pt height=47.80611pt/></p> 
 
 When we first initialize a model, usually its weights are generated randomly and every time we train, we update them in a way that in the next training step, it lowers the loss value.
 
@@ -53,9 +53,9 @@ And let's use the same loss function mentioned above.
 
 To compute the gradient descent, we need partial derivatives with respect to weights and bias (if there is). The followings are corresponding equations.
 
-$$MSE = \frac{1}{N}\sum_{i=1}^N(y_i - (x_iw + b))^2$$ 
-$$\frac{\partial MSE}{\partial w} = \frac{-2}{N}\sum_{i=1}^N(y_i - (x_iw + b))x_i$$
-$$\frac{\partial MSE}{\partial b} = \frac{-2}{N}\sum_{i=1}^N(y_i - (x_iw + b))$$
+<p align="center"><img src="https://rawgit.com/hsong1101/ML-Tutorials/master/svgs/1d2a2b73ccbaedd7296d3ae6abd8fa99.svg?invert_in_darkmode" align=middle width=229.16685pt height=47.80611pt/></p> 
+<p align="center"><img src="https://rawgit.com/hsong1101/ML-Tutorials/master/svgs/4d3db54f61a9c29009018f8937bd64b5.svg?invert_in_darkmode" align=middle width=254.2782pt height=47.80611pt/></p>
+<p align="center"><img src="https://rawgit.com/hsong1101/ML-Tutorials/master/svgs/f779b595425636e4e7956597c98c3ff9.svg?invert_in_darkmode" align=middle width=240.2334pt height=47.80611pt/></p>
 
 ## Convex problem (brief overview)
 
@@ -202,14 +202,14 @@ Let's look at an example of setting a high learning rate.
 
 ![gradient descent example](plots/gd_example1.png)
 
-The above is the graph of $f(x) = x^2$ and our current w is -4. To get to the optimum, we have to move to the right by 4. With the derivative of the function and the learning rate of 2, we will have the new weight of 
-$$w = w - lr * dw = -4 - 2 * (-8) = 12$$
+The above is the graph of <img src="https://rawgit.com/hsong1101/ML-Tutorials/master/svgs/45d56c128bbdcd4414f84c155351f718.svg?invert_in_darkmode" align=middle width=69.863145pt height=26.76201000000001pt/> and our current w is -4. To get to the optimum, we have to move to the right by 4. With the derivative of the function and the learning rate of 2, we will have the new weight of 
+<p align="center"><img src="https://rawgit.com/hsong1101/ML-Tutorials/master/svgs/54014b5c11e7a9b5c0eba8dec9952285.svg?invert_in_darkmode" align=middle width=274.72665pt height=16.438356pt/></p>
 
 ![gradient example 2](plots/gd_example2.png)
 
 We can see that the red dot is now much further away from the starting point!
 
-Now we if use too low learning rate such as 0.00001, from w of -4 will be $$w = w - lr*dw = -4 - 0.00001*(-8) = -3.99992$$
+Now we if use too low learning rate such as 0.00001, from w of -4 will be <p align="center"><img src="https://rawgit.com/hsong1101/ML-Tutorials/master/svgs/0600656cc7164ac83fd4d0b3fda6c6e4.svg?invert_in_darkmode" align=middle width=370.61805pt height=16.438356pt/></p>
 
 ![gradient example 3](plots/gd_example3.png)
 
