@@ -1,36 +1,27 @@
 
-# Intro
+![](plots/sin_animation.gif)
 
-In this post, we will go through what Linear Regression is and how to implement it from the scratch.
+# What is it?
 
-![Linear Regression GIF](anim1.gif)
+Simply put, linear regression is building a model that to a line that fits data samples with the least loss values.
 
-So what is Linear Regression? We use this when we want to find out an approximate linear relation between a feature and the remaining features of a dataset. This relation can be proportional or disproportional or none at all. 
+To do so, a model should figure out a proper relation, if there exists, between independent (x) and dependent values (y). This relation could be proportional or not or no relation at all.
 
-![Different Relations](relation.png)
+As with other machine learning examples, it is impossible to predict something with no errors, so our goal is to build a model that produces the least possible loss values which is done by computing the difference between actual and predicted values.
 
-With a linear regression model, we can predict (approximate) values. Examples where we can use this model are Height vs Weight, Income vs Age, Price of Houses vs Quality, and many more. In most cases, it is impossible to predict with no errors and the model tries to find a relation with the least errors. (This error is also called <u>residuals</u>)
+One naive loss function can be $$loss = \sum_i^N(y - \hat y_i)$$ where $\hat y_i$ is the predicted values and $N$ is the number of samples. <br>In this post, we will use Mean Squared Error function $$MSE = \frac{1}{N}\lVert \hat y - y \rVert_2^2$$.
 
-There are several versions of linear regression such as ordinary least squares (OLS), generalized least squares (GLS), weighted least squares (WLS) and so on, with or without other forms of regularization but in this post, OLS will be covered.
+# Data Exploration
 
-# Code
+Let's say we would like to know the relation between the height and weight of a person.
 
+We can already tell that the taller the person is, the heavier the weight gets. Let's find out if this is true.
 
-```python
-import numpy as np
-import pandas as pd
-import matplotlib.pyplot as plt
-```
-
-Before proceeding further, let's use weight vs height dataset from Kaggle for this exercise. You can find them [here](https://www.kaggle.com/mustafaali96/weight-height).
-
-Once you download the data and put it in the same folder you are coding, let's load them and check the first five rows. 
+The data we are going to use is from [Kaggle's weight-height](https://www.kaggle.com/mustafaali96/weight-height) uploaded by Mustafa Ali.
 
 
 ```python
-dat = pd.read_csv('./weight-height.csv')
-
-dat.head()
+data[data['Gender'] == 'Male'].head(2)
 ```
 
 
@@ -72,23 +63,55 @@ dat.head()
       <td>68.781904</td>
       <td>162.310473</td>
     </tr>
+  </tbody>
+</table>
+</div>
+
+
+
+
+```python
+data[data['Gender'] == 'Female'].head(2)
+```
+
+
+
+
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>Gender</th>
+      <th>Height</th>
+      <th>Weight</th>
+    </tr>
+  </thead>
+  <tbody>
     <tr>
-      <th>2</th>
-      <td>Male</td>
-      <td>74.110105</td>
-      <td>212.740856</td>
+      <th>5000</th>
+      <td>Female</td>
+      <td>58.910732</td>
+      <td>102.088326</td>
     </tr>
     <tr>
-      <th>3</th>
-      <td>Male</td>
-      <td>71.730978</td>
-      <td>220.042470</td>
-    </tr>
-    <tr>
-      <th>4</th>
-      <td>Male</td>
-      <td>69.881796</td>
-      <td>206.349801</td>
+      <th>5001</th>
+      <td>Female</td>
+      <td>65.230013</td>
+      <td>141.305823</td>
     </tr>
   </tbody>
 </table>
@@ -98,7 +121,7 @@ dat.head()
 
 
 ```python
-dat.shape
+data.shape
 ```
 
 
@@ -108,231 +131,261 @@ dat.shape
 
 
 
-There are 10000 samples and have $Gender, Height, Weight$ columns. Let's drop the Gender column so that we only have height and weight vectors. 
-
-You can still use the $Gender$ column and using two separate models and compare the relation of weight and height by gender.
+We have 10,000 data samples and gener, height and weight features.
 
 
 ```python
-dat = dat.drop('Gender', axis=1)
-```
-
-## Constructing a Model
-
-There are two versions when constructing a linear regression model.
-1. One whose line goes through the origin.
-2. One whose line doesn't go through the origin (model with bias).
-
-Let's start with a model that goes through the origin and compare it later to the one that doesn't.
-
-If we choose the first model, we can build a model in two ways. One is using a closed-form equation and one is using a loop to find an appropriate weight $w$ (or slope) of the line with the least errors.
-
-The equation for the closed form is as follows.
-$$w = (X^TX)^{-1}X^Ty$$
-
-Before we advance, let's first graph them out to visualize.
-
-![Scatter of Height vs Weight](scatter1.png)
-
-We can easily assume that the taller people get, the heavier the become.
-
-With the equation above, we can get the $w$ by the following. (The @ means matrix multiplication)
-
-
-```python
-X = dat['Height']
-y = dat['Weight']
-
-closed_w = 1 / (X.T @ X) * X.T @ y
-
-round(closed_w, 4)
+data.describe()
 ```
 
 
 
 
-    2.4502
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>Height</th>
+      <th>Weight</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>count</th>
+      <td>10000.000000</td>
+      <td>10000.000000</td>
+    </tr>
+    <tr>
+      <th>mean</th>
+      <td>66.367560</td>
+      <td>161.440357</td>
+    </tr>
+    <tr>
+      <th>std</th>
+      <td>3.847528</td>
+      <td>32.108439</td>
+    </tr>
+    <tr>
+      <th>min</th>
+      <td>54.263133</td>
+      <td>64.700127</td>
+    </tr>
+    <tr>
+      <th>25%</th>
+      <td>63.505620</td>
+      <td>135.818051</td>
+    </tr>
+    <tr>
+      <th>50%</th>
+      <td>66.318070</td>
+      <td>161.212928</td>
+    </tr>
+    <tr>
+      <th>75%</th>
+      <td>69.174262</td>
+      <td>187.169525</td>
+    </tr>
+    <tr>
+      <th>max</th>
+      <td>78.998742</td>
+      <td>269.989699</td>
+    </tr>
+  </tbody>
+</table>
+</div>
 
 
 
-Now let's plot the points with our simple model.
+![](plots/male_female_plot.png)
 
-![Scatter of Height vs Weight](scatter2.png)
+It seems that our assumption is right. The weight increases as the height does. Also by the looks of it, we could just ignore gender and treat the samples as one bigger group since one line could still fit pretty decently.
 
-We see that the green line goes through the center of the data points, when there is obviously a better model with lower error values. This is due to the absence of the bias term. Let's look at the same graph as above but with wider x-axis.
+If we zoom out and view the height and weight samples (of male and female), it looks like this.
 
-![Scatter of Height vs Weight](scatter3.png)
+![](plots/height_weight_plot1.png)
 
-Since the line has to go through the origin, the best solution it can generate is to go through the center of the data points. 
+So surely, we cannot fit a line that goes through the origin to the samples.
 
-Now instead of using the closed-form equation, let's construct one using gradient descent. To do this, we need two helper functions and one main function.
+# Code
+
+## Using Gradient Descent
+
+As mentioned in [Gradient Descent](https://tlr.gitbook.io/data-science/machine-learning-basics/gradient-descent) post, we first have to choose which loss function we are going to use and define partial derivatives. 
+
+Let's reuse the codes from the post and try running gradient descent.
 
 
 ```python
-def grad_mse_weight(w, x, y, b):
+# Loss function
+def mse(y, x, w, b):
     
-    return -2 * np.mean((y - (w*x + b)) * x)
+    return np.mean((y - (x * w + b))**2)
 
-def grad_mse_bias(w, x, y, b):
+# Partial Derivative with respect to w
+def partial_w(y, x, w, b):
     
-    return -2 * np.mean(y - (w*x + b))
+    return -2 * np.mean((y - (x * w + b)) * x)
 
-def predict(x, y, learning_rate=0.1):
+# Partial Derivative with respect to b
+def partial_b(y, x, w, b):
     
-    w = 0
-    b = 0
+    return -2 * np.mean(y - (x * w + b))
+```
+
+
+```python
+x = data['Height']
+y = data['Weight']
+
+w = b = 0
+
+learning_rate = 1e-3
+
+loss = []
+
+for i in range(1000):
+
+    dw = partial_w(y, x, w, b)
+    db = partial_b(y, x, w, b)
+
+    w = w - dw * learning_rate
+    b = b - db * learning_rate
     
-    iter_num = 10000
-    
-    for i in range(iter_num):
+    if i % 100 == 0:
         
-        dw = grad_mse_weight(w, x, y, b)
-        db = grad_mse_bias(w, x, y, b)
+        l = mse(y, x, w, b)
         
-        b -= db * learning_rate
-        w -= dw * learning_rate
+        print('Loss :', l)
         
-    return w, b
+        loss.append(l)
 ```
 
-The first two functions are used to determine the ideal slope of the linear regression (or the weight) and the bias term.
+    Loss : 1631769.5829055535
+    Loss : 1.218227932815399e+185
+    Loss : inf
+    Loss : inf
 
-If you are not familiar with gradient descent, you can find them [here!](https://tlr.gitbook.io/data-science/machine-learning-basics/gradient-descent). To explain it briefly, these two functions compute a better value for bias and w at each iteration and update them. 
 
-In <code>predict(x,y)</code> function, we are looping 10000 times and updating weight and bias every iteration. You can try putting different values for <code>learning_rate</code> and <code>iter_num</code> to acquire a better model.
+    /home/han/anaconda3/envs/py/lib/python3.7/site-packages/ipykernel_launcher.py:15: RuntimeWarning: invalid value encountered in double_scalars
+      from ipykernel import kernelapp as app
 
-When we train and test our model, it is a good practice to divide our data into two portions. One for training and one for testing the model. This is to avoid overfitting of the model. <strike>You can find a post about overfitting and underfitting of a model [here](). To be updated</strike>
+
+    Loss : nan
+    Loss : nan
+    Loss : nan
+    Loss : nan
+    Loss : nan
+    Loss : nan
+
+
+We see that the loss goes to infinity and becomes nan. Usually this happens when x and y values are not small and the sum of losses gets huge.
+
+One thing is normalization while the other is standardization.
+$$normalization = \frac{x - min_x}{max_x - min_x}$$
+$$\\$$
+$$standardization = \frac{x - \mu_x}{\sigma_x}$$
+
+Let's use both and compare.
 
 
 ```python
-from sklearn.model_selection import train_test_split
-
-X_train, X_val, y_train, y_val = train_test_split(X, y)
-```
-
-One more thing you should know is that our height and weight values are quite big that the loss function we are using (Mean Squared Errors) leads to exploding gradient descent values that the resulting bias and weight after predict function will likely generate NaN values. We can verify this with the following.
-
-
-```python
-w, b = predict(X_train, y_train)
-w, b
-```
-
-    c:\users\hsong1101\anaconda3\envs\p\lib\site-packages\ipykernel_launcher.py:22: RuntimeWarning: invalid value encountered in double_scalars
+def gradient_descent(x, y, verbose=True, epochs=10000):
     
-
-
-
-
-    (nan, nan)
-
-
-
-As you can see, the values for $w$ and $b$ are both nan values. This is because of too much update on both at each iteration. The following statement is the first five $w$ and $b$ values at each iteration (This could be different with different hyperparameters).
-
-1. 0.3228807136656615 21.65726752224676
-2. -2.2295643269137306 -148.1549601788397
-3. 17.763141860690368 1183.3266020093588
-4. -139.01850164601672 -9256.691211902544
-5. 1090.2704303466826 72602.47884447992
-
-This is one of reasons we normalize our data before setting up a model. By doing this, we are scaling all numeric values to range from 0 to 1 and doing this will prevent the model from generating any NaN values or exploding gradient descent as well as faster convergence.
-
-There is another reason why we normalize. Our heights and weights have different scale that heights range from around 50 to 80 while weights range from 50 to 280. What if we changed the scale of heights from inches to feet or any other metric. Then we cannot use the same $w$ and $b$ as that model would work poorly due to different relation with different scale. 
-
-If we both scale them to range from 0 to 1, then it doesn't matter if the heights value are in inches, feet or centimeters as the relation between two features will always have the same scale.
-
-***
-
-First let's normalize our data and find an appropriate values.
-
-
-```python
-x1 = X_train / X_train.max()
-y1 = y_train / y_train.max()
-```
-
-
-```python
-w, b = predict(x1, y1)
-
-round(w, 4), round(b, 4)
-```
-
-Below is our data with trained model.
-
-![Scatter of Height vs Weight](scatter4.png)
-
-Now what we need to do is to predict and compare with true y values. Note that we have to scale them using the same <code>X_train.max</code> and <code>y_train.max</code> values for consistency or else the scale of the result will be different.
-
-
-```python
-x2 = X_val / X.max()
-y2 = y_val / y.max()
-```
-
-Next is our testing set with prediction line.
-
-![Scatter of Height vs Weight](scatter5.png)
-
-Now that we have a model, let's see how much the error is. For the prediction, we should scale them back to its original form to compare with true y values. To do that, we can just multiply the y_max value to the predicted values.
-
-
-```python
-def MSE(pred, y):
-    return np.mean(np.square(y - pred))
-```
-
-
-```python
-print('Error Using Closed-Form Equation : {}'.format(MSE(X_val*w, y_val)))
-print('Error Using Gradient Descent : {}'.format(MSE((x2*w+b) * y.max(), y_val)))
-```
-
-    Error Using Closed-Form Equation : 1019.9261523310762
-    Error Using Gradient Descent : 153.93702071075964
+    losses = []
     
-
-***
-
-We can use linear regression even on functions that are not linear as long as our weight vectors are linear. For example, consider the following plot.
-
-
-```python
-x = np.linspace(-10, 10, 100)
-y = x + np.sin(x)
-noise = np.random.normal(0, 0.7, 100)
-true_y = y + noise
-```
-
-![Sin Model](sin_model_plot.png)
-
-The data is generated with $f(x) = x + sin(x)$ with some noise. If we make a model with the function defined above, it will look like this.
-
-
-```python
-w, b = predict(x, y, learning_rate=0.01)
-w, b
-```
-
-
-
-
-    (1.0211549273118783, 1.1088907569956085e-16)
-
-
-
-![Sin Model](sin_model_linear.png)
-
-
-```python
-print('Error Value : {}'.format(MSE(w*x + b, true_y)))
-```
-
-    Error Value : 0.7936810997236736
+    w = b = 0
     
+    iter_ver = epochs*.1
+    
+    for i in range(epochs):
 
-Now let's define our model with the function $f(x) = \theta_1 x + sin(\theta_2 x)$. The next functions are gradient descent to compute $\theta_1$ and $\theta_2$. Since the above data goes through the origin, we don't have to include a bias term this time.
+        dw = partial_w(y, x, w, b)
+        db = partial_b(y, x, w, b)
+
+        w = w - dw * learning_rate
+        b = b - db * learning_rate
+
+        if (i+1) % iter_ver == 0:
+
+            loss = mse(y, x, w, b)
+
+            losses.append(loss)
+            
+            if verbose:
+                
+                print(f'Epoch : {i+1} Loss : {loss}')
+        
+    return w, b, losses
+```
+
+
+```python
+x = data['Height']
+y = data['Weight']
+
+norm_x = (x - x.min()) / (x.max() - x.min())
+norm_y = (y - y.min()) / (y.max() - y.min())
+
+std_x = (x - x.mean()) / x.std()
+std_y = (y - y.mean()) / y.std()
+
+norm_w, norm_b, norm_losses = gradient_descent(norm_x, norm_y, verbose=False)
+std_w, std_b, std_losses = gradient_descent(std_x, std_y, verbose=False)
+```
+
+![](plots/norm_std_plot.png)
+
+We see that standardization converged faster than normalization. As shown, the speed of convergence depends on which scaling method we choose to use. However, it does not mean that we can use anything we want. There are some cases (or models) that prefer normalization over standardization and vice versa.
+
+One example is when we work with SVM model. In this case, standardization will be better to maximize the margin between two classes. More details will be in another post.
+
+Since we standardized samples, we have to do the same when we predict other samples. 
+
+---
+
+# Misc.
+
+Linear regression we used is Ordinay Least Squares but there are other linear regression as well, such as
+1. Weighted Least Squares
+2. Generalized Least Squares
+3. Ridge Regression
+4. Lasso Regression
+5. Elastic Net Regression
+
+There are also other forms not mentioned here. The last three regressions are regularized regression which will be covered in a separate post.
+
+---
+
+Also it is also possible to have linear regression whose line is actually not a line!
+
+For example, let's say we have the following samples.
+
+![](plots/sin_plot.png)
+
+If we use the model used above, we will have a line just like this.
+
+![](plots/linear_sin.png)
+
+An equation used to generate plots is $$y = x * \theta_1 + sin(x * \theta_2)$$ where $\theta$ is our new weights.
+
+Since we have two different weights, the derivatives are different as well. The equations are
+$$$$
+$$\frac{\partial y}{\partial \theta_1} = \frac{-2}{N}(x * (y - \theta_1 * x - sin(\theta_2 * x))\\$$
+$$\frac{\partial y}{\partial \theta_2} = \frac{-2}{N}(y - (\theta_1 * x + sin(\theta_2 * x)) * (x * cos(\theta_2) * x))$$
 
 
 ```python
@@ -341,59 +394,49 @@ def model(x, theta):
 
 def grad_dt1(x, y, theta):
     
-    return -2 * np.mean(x * (y - theta[0] * x - np.sin(theta[1] * x)))
+    return -2 * np.mean(x * (y - theta[0] * x - np.sin(theta[1] * x)) )
 
 def grad_dt2(x, y, theta):
     
-    return -2 * np.mean((y - (theta[0] * x + np.sin(theta[1] * x))) * (x * np.cos(theta[1] * x)))
+    return -2 * np.mean( (y - (theta[0] * x + np.sin(theta[1] * x))) * (x * np.cos(theta[1] * x)) )
 
-def predict(x, y, theta, learning_rate=0.01):
+def nonlinear_gd(x, y, theta, learning_rate=0.01):
     
-    t1, t2 = 0, 0
-    
-    iter_num = 20
+    iter_num = 3000
     
     for i in range(iter_num):
         
         dt1 = grad_dt1(x, y, theta)
         dt2 = grad_dt2(x, y, theta)
+
+        dtheta = np.array([dt1, dt2])
+        theta = theta - learning_rate * dtheta
         
-        t1 -= dt1 * learning_rate
-        t2 -= dt2 * learning_rate
-        
-        
-    return t1, t2
+    return theta
 ```
 
 
 ```python
-t1, t2 = predict(x, y, [0, 0], learning_rate=0.0007)
-t1, t2
+theta = np.array([0, 0])
+theta = nonlinear_gd(x, y, theta, learning_rate=0.01)
+theta
 ```
 
 
 
 
-    (0.9723320317973033, 0.9723320317973033)
+    array([0.99936438, 1.03895846])
 
 
 
-![Sin Model](sin_model_complex.png)
+![](plots/nonlinear_sin.png)
 
+Although it requires us to know which model is used to generate samples, it is possible to fit a line to nonlinear data.
 
-```python
-print('Error Value : {}'.format(MSE(model(x, [t1, t2]), y+noise)))
-```
-
-    Error Value : 0.5169340003737359
-    
-
-Note that I've tried many different learning_rate value to have one that fits well to the data points.
-
-# End Note 
+# Conclusion
 
 This post only deals with the basic linear regression without any regularization such as Lasso, Ridge or Elastic Net. There are many versions of it besides Ordinary Least Squares. These topics will be covered in later posts.
 
-Thank you all for reading and if you find any errors or typos or have any suggestions, please let me know.
+You can find the full code [here]().
 
-Thank you all for reading!
+Thank you all for reading and if you find any errors or typos or have any suggestions, please let me know.
